@@ -29,30 +29,50 @@ export function QRScanner() {
   const scanIntervalRef = useRef<NodeJS.Timeout>()
 
   // Start camera for QR scanning
-  const startCamera = async () => {
-    try {
-      setScanResult(null)
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }, // Use back camera on mobile
-      })
+  // Refactored: set scanning state, then start camera in useEffect after video is mounted
+  const [shouldStartCamera, setShouldStartCamera] = useState(false)
+  const startCamera = () => {
+    setScanResult(null)
+    setShouldStartCamera(true)
+  }
 
-      if (videoRef.current) {
+  useEffect(() => {
+    const runCamera = async () => {
+      if (!shouldStartCamera || !videoRef.current) return
+      try {
+        console.log("[QRScanner] Start camera effect running")
+        let facingMode: "user" | "environment" = "user"
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+        if (isMobile) {
+          facingMode = "environment"
+        }
+        console.log(`[QRScanner] Requesting camera with facingMode: ${facingMode}`)
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode },
+        })
+        console.log("[QRScanner] Camera stream received", stream)
         videoRef.current.srcObject = stream
         streamRef.current = stream
         setIsScanning(true)
-
-        // Start scanning for QR codes
-        scanIntervalRef.current = setInterval(scanQRCode, 500) // Scan every 500ms
+        console.log("[QRScanner] Video element updated with stream")
+        scanIntervalRef.current = setInterval(scanQRCode, 500)
+      } catch (error) {
+        console.error("Error accessing camera:", error)
+        setScanResult({
+          success: false,
+          error: "Unable to access camera. Please check permissions or use manual entry.",
+          message: "Camera access denied",
+        })
       }
-    } catch (error) {
-      console.error("Error accessing camera:", error)
-      setScanResult({
-        success: false,
-        error: "Unable to access camera. Please check permissions or use manual entry.",
-        message: "Camera access denied",
-      })
     }
-  }
+    runCamera()
+    // Cleanup function
+    return () => {
+      if (scanIntervalRef.current) clearInterval(scanIntervalRef.current)
+    }
+  }, [shouldStartCamera])
 
   // Stop camera
   const stopCamera = () => {
@@ -182,64 +202,61 @@ export function QRScanner() {
   }
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
+    <div className="max-w-md mx-auto space-y-8">
       {/* QR Scanner Card */}
-      <Card className="bg-white/95 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-blue-600" />
+      <Card className="bg-white/95 shadow-xl rounded-2xl border border-blue-100 backdrop-blur-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-xl font-bold text-blue-700">
+            <QrCode className="h-6 w-6 text-blue-600" />
             QR Code Scanner
           </CardTitle>
-          <CardDescription>Scan the QR code displayed by your teacher to mark attendance</CardDescription>
+          <CardDescription className="text-gray-500">Scan the QR code displayed by your teacher to mark attendance</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           {/* Camera Scanner */}
-          <div className="text-center">
-            {!isScanning ? (
-              <div className="space-y-4">
-                <div className="w-64 h-64 mx-auto bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                  <div className="text-center">
-                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Camera not active</p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-72 h-72 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 shadow-md flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover rounded-xl border-none"
+                style={{ display: isScanning ? "block" : "none" }}
+              />
+              {!isScanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Camera className="h-16 w-16 text-blue-300 mb-3" />
+                  <p className="text-base text-blue-500 font-medium">Camera not active</p>
+                </div>
+              )}
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute inset-0 border-4 border-blue-400 rounded-xl pointer-events-none">
+                <div className="absolute top-2 left-2 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-xl"></div>
+                <div className="absolute top-2 right-2 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-xl"></div>
+                <div className="absolute bottom-2 left-2 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-xl"></div>
+                <div className="absolute bottom-2 right-2 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-xl"></div>
+              </div>
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center">
+                  <div className="bg-white rounded-lg p-4 flex items-center gap-3 shadow-lg">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="text-base font-semibold">Processing...</span>
                   </div>
                 </div>
-                <Button onClick={startCamera} className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Camera className="mr-2 h-4 w-4" />
+              )}
+            </div>
+            <div className="flex gap-2 w-full">
+              {!isScanning ? (
+                <Button onClick={startCamera} className="w-full bg-blue-600 hover:bg-blue-700 text-base py-2 rounded-lg shadow">
+                  <Camera className="mr-2 h-5 w-5" />
                   Start Camera Scanner
                 </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className="w-64 h-64 mx-auto rounded-lg border-2 border-blue-300"
-                  />
-                  <canvas ref={canvasRef} className="hidden" />
-                  <div className="absolute inset-0 border-2 border-blue-500 rounded-lg pointer-events-none">
-                    <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-blue-500"></div>
-                    <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-blue-500"></div>
-                    <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-blue-500"></div>
-                    <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-blue-500"></div>
-                  </div>
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-                      <div className="bg-white rounded-lg p-3 flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-sm">Processing...</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={stopCamera} variant="outline" className="flex-1 bg-transparent">
-                    Stop Scanner
-                  </Button>
-                </div>
-              </div>
-            )}
+              ) : (
+                <Button onClick={stopCamera} variant="outline" className="flex-1 bg-white text-blue-700 border-blue-300 py-2 rounded-lg shadow">
+                  Stop Scanner
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Manual Entry */}
