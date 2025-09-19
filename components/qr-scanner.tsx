@@ -115,7 +115,8 @@ export function QRScanner() {
       const code = jsQR(imageData.data, imageData.width, imageData.height)
 
       if (code && code.data) {
-        console.log("[v0] QR code detected:", code.data)
+        const now = new Date().toISOString();
+        console.log(`[QRScanner] Scanned token: ${code.data}, at: ${now}`);
         await processToken(code.data)
       }
     } catch (error) {
@@ -153,10 +154,8 @@ export function QRScanner() {
           message: data.message,
         })
 
-        // Stop scanning on successful scan
-        if (isScanning) {
-          stopCamera()
-        }
+        // Stop scanning and camera after successful scan
+        stopCamera()
         setManualToken("")
       } else {
         setScanResult({
