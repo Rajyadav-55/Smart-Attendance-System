@@ -1,12 +1,3 @@
-  // Auto-refresh scanner every 15 seconds
-  useEffect(() => {
-    if (!isScanning) return;
-    const refreshTimer = setTimeout(() => {
-      stopCamera();
-      setTimeout(() => startCamera(), 500); // Restart after short delay
-    }, 15000);
-    return () => clearTimeout(refreshTimer);
-  }, [isScanning]);
 "use client"
 
 import type React from "react"
@@ -29,6 +20,15 @@ interface ScanResult {
 
 export function QRScanner() {
   const [isScanning, setIsScanning] = useState(false)
+  // Auto-refresh scanner every 15 seconds
+  useEffect(() => {
+    if (!isScanning) return;
+    const refreshTimer = setTimeout(() => {
+      stopCamera();
+      setTimeout(() => startCamera(), 500); // Restart after short delay
+    }, 15000);
+    return () => clearTimeout(refreshTimer);
+  }, [isScanning]);
   const [manualToken, setManualToken] = useState("")
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -350,7 +350,7 @@ export function QRScanner() {
             </div>
             <ul className="text-sm text-blue-700 space-y-1 ml-6">
               <li>• Point your camera at the QR code on the teacher's screen</li>
-              <li>• The code changes every 5 seconds for security</li>
+              <li>• The code changes every 15 seconds for security</li>
               <li>
                 • <span className="font-medium text-green-700">First 10 minutes: Marked as Present</span>
               </li>
