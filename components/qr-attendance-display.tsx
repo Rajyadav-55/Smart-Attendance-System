@@ -104,7 +104,7 @@ export function QRAttendanceDisplay({ classId, className, classTime }: QRAttenda
   const startTokenRotation = (sessionId: string) => {
     tokenIntervalRef.current = setInterval(() => {
       generateNewToken(sessionId)
-    }, 5000)
+    }, 15000)
   }
 
   // Start countdown timer
@@ -255,7 +255,7 @@ export function QRAttendanceDisplay({ classId, className, classTime }: QRAttenda
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-2">QR code refreshes every 5 seconds</p>
+              <p className="text-sm text-gray-600 mt-2">QR code refreshes every 15 seconds</p>
             </div>
 
             {/* Status Information */}

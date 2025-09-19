@@ -1,3 +1,12 @@
+  // Auto-refresh scanner every 15 seconds
+  useEffect(() => {
+    if (!isScanning) return;
+    const refreshTimer = setTimeout(() => {
+      stopCamera();
+      setTimeout(() => startCamera(), 500); // Restart after short delay
+    }, 15000);
+    return () => clearTimeout(refreshTimer);
+  }, [isScanning]);
 "use client"
 
 import type React from "react"
@@ -120,6 +129,10 @@ export function QRScanner() {
 
     setIsProcessing(true)
     setScanResult(null)
+    // Clear previous error after 2 seconds for better UX
+    setTimeout(() => {
+      setScanResult(null);
+    }, 2000);
 
     try {
       console.log("[v0] Processing token:", token.substring(0, 10) + "...")

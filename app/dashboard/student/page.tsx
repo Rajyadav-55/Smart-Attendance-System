@@ -1,6 +1,7 @@
 
 "use client";
 import React, { useEffect, useState } from "react";
+import { LogoutButton } from "@/components/logout-button";
 import { AttendanceAnalytics } from "@/components/attendance-analytics";
 import { CoursesTable } from "@/components/courses-table";
 // import { StudentsTable } from "@/components/students-table";
@@ -77,7 +78,7 @@ export default function StudentDashboard() {
         <div className="flex gap-4">
           <a href="/scan" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Scan QR</a>
           <a href="/analytics" className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">View Analytics</a>
-          <a href="/logout" className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Logout</a>
+          <LogoutButton />
         </div>
       </nav>
 

@@ -74,8 +74,8 @@ export class QRTokenManager {
   // Generate a new rotating token for a session
   async generateRotatingToken(sessionId: string): Promise<string | null> {
     try {
-      const token = this.generateToken()
-      const expiresAt = new Date(Date.now() + 5000) // 5 seconds from now
+  const token = this.generateToken()
+  const expiresAt = new Date(Date.now() + 15000) // 15 seconds from now
 
       const supabase = await this.getSupabase()
       const { error } = await supabase.from("qr_tokens").insert({
